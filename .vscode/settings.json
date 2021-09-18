@@ -1,0 +1,16 @@
+{
+    "explorerExclude.backup": null,
+    "files.exclude": {
+        "**/.DS_Store": true,
+        "**/.git": true,
+        "**/.hg": true,
+        "**/.svn": true,
+        "**/.vscode": false,
+        "**/*.pdf": false,
+        "**/CVS": true,
+        "**/desktop.ini": true,
+        "**/Thumbs.db": true,
+        "LICENSE": true
+    },
+    "restructuredtext.confPath": ""
+}
