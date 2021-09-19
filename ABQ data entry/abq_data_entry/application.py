@@ -1,5 +1,5 @@
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from datetime import date
 from .constants import EW
 from . import views as v
@@ -31,6 +31,10 @@ class Application(tk.Tk):
         # check for errors first
         if e := self.record_form.get_errors():
             self.status.set(f"Cannot save, error in fields: {', '.join(e.keys())}")
+            message = "Cannot save record"
+            errors = "\n * ".join(e.keys())
+            detail = f"The following fields have errors:\n * {errors}"
+            messagebox.showerror(title="Error", message=message, detail=detail)
             return False
         filename = f"abc_data_record_{date.today().isoformat()}.csv"
         m.CSVModel(filename).save_record(self.record_form.get())
