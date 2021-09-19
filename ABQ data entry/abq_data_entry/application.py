@@ -18,6 +18,15 @@ class Application(tk.Tk):
             text="ABQ Data Entry Application",
             font=("TkDefaultFont", 16),
         ).grid(row=0)
+
+        self.settings = {
+            "autofill date": tk.BooleanVar(),
+            "autofill sheet data": tk.BooleanVar(),
+        }
+        self.callbacks = {"file->select": self.on_file_select, "file->quit": self.quit}
+        menu = v.MainMenu(self, settings=self.settings, callbacks=self.callbacks)
+        self.config(menu=menu)
+
         self.record_form = v.DataRecordForm(self, fields=m.CSVModel.fields)
         self.record_form.grid(row=1, padx=10)
         self.save_button = ttk.Button(self, text="Save", command=self.on_save)
@@ -26,6 +35,9 @@ class Application(tk.Tk):
         self.status_bar = ttk.Label(self, textvariable=self.status)
         self.status_bar.grid(sticky=EW, row=3, padx=10)
         self.records_saved = 0
+
+    def on_file_select(self):
+        ...
 
     def on_save(self):
         # check for errors first

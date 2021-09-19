@@ -1,4 +1,3 @@
-import tkinter as tk
 import tkinter.constants as tkc
 from enum import Enum
 
