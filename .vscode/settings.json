@@ -1,6 +1,10 @@
 {
+    "cSpell.words": [
+        "Agrilabs"
+    ],
     "explorerExclude.backup": null,
     "files.exclude": {
+        "**/__pycache__": true,
         "**/.DS_Store": true,
         "**/.git": true,
         "**/.hg": true,

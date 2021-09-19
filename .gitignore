@@ -49,3 +49,4 @@ Temporary Items
 # ===========================
 
 *.csv
+**/__pycache__
