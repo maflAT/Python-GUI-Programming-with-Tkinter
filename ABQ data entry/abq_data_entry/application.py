@@ -28,7 +28,9 @@ class Application(tk.Tk):
         menu = v.MainMenu(self, settings=self.settings, callbacks=self.callbacks)
         self.config(menu=menu)
 
-        self.record_form = v.DataRecordForm(self, fields=m.CSVModel.fields)
+        self.record_form = v.DataRecordForm(
+            self, fields=m.CSVModel.fields, settings=self.settings
+        )
         self.record_form.grid(row=1, padx=10)
         self.save_button = ttk.Button(self, text="Save", command=self.on_save)
         self.save_button.grid(sticky=tk.E, row=2, padx=10)
@@ -48,7 +50,6 @@ class Application(tk.Tk):
             self.filename.set(filename)
 
     def on_save(self):
-        # check for errors first
         if e := self.record_form.get_errors():
             self.display_errors(e)
             return False
@@ -57,7 +58,7 @@ class Application(tk.Tk):
         self.status.set(f"{self.records_saved} records saved this session.")
         self.record_form.reset()
 
-    def display_errors(self, e):
+    def display_errors(self, e: dict[str, str]):
         self.status.set(f"Cannot save, error in fields: {', '.join(e.keys())}")
         message = "Cannot save record"
         errors = "\n * ".join(e.keys())

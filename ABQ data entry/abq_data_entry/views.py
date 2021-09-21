@@ -35,9 +35,17 @@ class MainMenu(tk.Menu):
 class DataRecordForm(tk.Frame):
     """The input form for our widgets"""
 
-    def __init__(self, parent, fields: dict[str, dict], *args, **kwargs):
+    def __init__(
+        self,
+        parent: tk.Widget,
+        fields: dict[str, dict],
+        settings: dict[str, tk.Variable],
+        *args,
+        **kwargs,
+    ):
         super().__init__(parent, *args, **kwargs)
         self.inputs: dict[str, w.LabelInput] = {}
+        self.settings = settings
         self.init_record_info(fields).grid(sticky=EW, row=0, column=0)
         self.init_env_info(fields).grid(sticky=EW, row=1, column=0)
         self.init_plant_info(fields).grid(sticky=EW, row=2, column=0)
@@ -181,8 +189,12 @@ class DataRecordForm(tk.Frame):
             widget.set("")
 
         # set defaults
-        self.inputs["Date"].set(date.today().isoformat())
-        if plot in ("", plot_values[-1]):
+        if self.settings["autofill date"].get():
+            self.inputs["Date"].set(date.today().isoformat())
+            self.inputs["Time"].input.focus()
+        if not self.settings["autofill sheet data"].get() or (
+            plot in ("", plot_values[-1])
+        ):
             self.inputs["Time"].input.focus()
             return
         self.inputs["Lab"].set(lab)
@@ -194,7 +206,7 @@ class DataRecordForm(tk.Frame):
 
     def get_errors(self):
         """Get a list of field errors in the form."""
-        errors = {}
+        errors: dict[str, str] = {}
         for name, widget in self.inputs.items():
             if hasattr(widget.input, "trigger_focusout_validation"):
                 widget.input.trigger_focusout_validation()
