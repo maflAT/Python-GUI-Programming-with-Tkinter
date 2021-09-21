@@ -20,10 +20,8 @@ class Application(tk.Tk):
         ).grid(row=0)
         default_filename = f"abc_data_record_{date.today().isoformat()}.csv"
         self.filename = tk.StringVar(value=default_filename)
-        self.settings = {
-            "autofill date": tk.BooleanVar(),
-            "autofill sheet data": tk.BooleanVar(),
-        }
+        self.settings_model = m.SettingsModel()
+        self.load_settings()
         self.callbacks = {"file->select": self.on_file_select, "file->quit": self.quit}
         menu = v.MainMenu(self, settings=self.settings, callbacks=self.callbacks)
         self.config(menu=menu)
@@ -38,6 +36,27 @@ class Application(tk.Tk):
         self.status_bar = ttk.Label(self, textvariable=self.status)
         self.status_bar.grid(sticky=EW, row=3, padx=10)
         self.records_saved = 0
+
+    def load_settings(self):
+        """Load settings into our self.settings dict"""
+        vartypes = {
+            "bool": tk.BooleanVar,
+            "str": tk.StringVar,
+            "int": tk.IntVar,
+            "float": tk.DoubleVar,
+        }
+        self.settings: dict[str, tk.Variable] = {}
+        for key, data in self.settings_model.variables.items():
+            vartype: tk.Variable = vartypes.get(data["type"], tk.StringVar)
+            self.settings[key] = vartype(value=data["value"])
+        for var in self.settings.values():
+            var.trace("w", self.save_settings)
+
+    def save_settings(self, *args):
+        """Save the current settings to a preferences file"""
+        for key, variable in self.settings.items():
+            self.settings_model.set(key, variable.get())
+        self.settings_model.save()
 
     def on_file_select(self):
         """Handle the file->select action from the menu"""

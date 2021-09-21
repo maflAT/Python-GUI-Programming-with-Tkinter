@@ -1,5 +1,7 @@
 import csv
 import os
+import json
+from typing import Any
 from .constants import FieldTypes as FT
 
 
@@ -78,3 +80,43 @@ class CSVModel:
             if not os.path.exists(self.filename):
                 csv_writer.writeheader()
             csv_writer.writerow(data)
+
+
+class SettingsModel:
+    """A model for saving (and loading) settings"""
+
+    def __init__(self, filename: str = "abq_settings.json", path: str = None) -> None:
+        path = path or os.getenv("APPDATA")
+        self.filepath = os.path.join(path, filename)
+        self.load()
+
+    variables = {
+        "autofill date": {"type": "bool", "value": True},
+        "autofill sheet data": {"type": "bool", "value": True},
+    }
+
+    def load(self):
+        """Load the settings from file"""
+        if not os.path.exists(self.filepath):
+            return
+        with open(self.filepath, "r") as fh:
+            raw_values = json.loads(fh.read())
+        for key in self.variables:
+            if key in raw_values and "value" in raw_values[key]:
+                self.variables[key]["value"] = raw_values[key]["value"]
+
+    def save(self, settings: dict[str, dict[str, Any]] = None):
+        """Save settings to file"""
+        json_string = json.dumps(self.variables)
+        with open(self.filepath, "w") as fh:
+            fh.write(json_string)
+
+    def set(self, key: str, value: Any):
+        """Allow external access to variables"""
+        if (
+            key in self.variables
+            and type(value).__name__ == self.variables[key]["type"]
+        ):
+            self.variables[key]["value"] = value
+        else:
+            raise ValueError(f"Unknown key '{key}' or invalid variable type")
