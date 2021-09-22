@@ -8,6 +8,7 @@ from .constants import FieldTypes as FT
 class CSVModel:
     """CSV file storage"""
 
+    TRUES = ["true", "yes", "1"]
     fields = {
         "Date": {"req": True, "type": FT.iso_date_string},
         "Time": {
@@ -70,16 +71,44 @@ class CSVModel:
         "Notes": {"req": False, "type": FT.long_string},
     }
 
-    def __init__(self, filename) -> None:
+    def __init__(self, filename: str) -> None:
         self.filename = filename
 
-    def save_record(self, data):
+    def save_record(self, data: dict, row_number: int = None):
         """Save a dict of data to the CSV file"""
-        with open(self.filename, "a") as fh:
+        if row_number is None:
+            mode = "a"
+            records = [data]
+        else:
+            mode = "w"
+            records = self.get_all_records()
+            records[row_number] = data
+        with open(self.filename, mode) as fh:
             csv_writer = csv.DictWriter(fh, fieldnames=self.fields.keys())
             if not os.path.exists(self.filename):
                 csv_writer.writeheader()
-            csv_writer.writerow(data)
+            csv_writer.writerows(data)
+
+    def get_all_records(self):
+        """Import all records from our csv file."""
+        if not os.path.exists(self.filename):
+            return []
+        with open(self.filename, "r") as fh:
+            reader = csv.DictReader(fh)
+            missing_fields = set(self.fields.keys()) - set(reader.fieldnames)
+            if len(missing_fields) > 0:
+                raise Exception(f"File is missing fields: {', '.join(missing_fields)}")
+            records = list(reader)
+        bool_fields = [
+            key for key, meta in self.fields.items() if meta["type"] == FT.boolean
+        ]
+        for record in records:
+            for key in bool_fields:
+                record[key] = record[key].lower() in self.TRUES
+        return records
+
+    def get_record(self, row_number: int):
+        return self.get_all_records()[row_number]
 
 
 class SettingsModel:
