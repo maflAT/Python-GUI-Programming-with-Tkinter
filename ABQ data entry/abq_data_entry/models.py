@@ -83,11 +83,12 @@ class CSVModel:
             mode = "w"
             records = self.get_all_records()
             records[row_number] = data
+        newfile = not os.path.exists(self.filename)
         with open(self.filename, mode) as fh:
             csv_writer = csv.DictWriter(fh, fieldnames=self.fields.keys())
-            if not os.path.exists(self.filename):
+            if newfile:
                 csv_writer.writeheader()
-            csv_writer.writerows(data)
+            csv_writer.writerows(records)
 
     def get_all_records(self):
         """Import all records from our csv file."""

@@ -20,21 +20,33 @@ class Application(tk.Tk):
         ).grid(row=0)
         default_filename = f"abc_data_record_{date.today().isoformat()}.csv"
         self.filename = tk.StringVar(value=default_filename)
+        self.data_model = m.CSVModel(filename=self.filename.get())
         self.settings_model = m.SettingsModel()
         self.load_settings()
-        self.callbacks = {"file->select": self.on_file_select, "file->quit": self.quit}
+        self.callbacks = {
+            "file->select": self.on_file_select,
+            "file->quit": self.quit,
+            "show_recordlist": self.show_recordlist,
+            "new_record": self.open_record,
+            "on_open_record": self.open_record,
+            "on_save": self.on_save,
+        }
         menu = v.MainMenu(self, settings=self.settings, callbacks=self.callbacks)
         self.config(menu=menu)
 
         self.record_form = v.DataRecordForm(
-            self, fields=m.CSVModel.fields, settings=self.settings
+            self,
+            fields=m.CSVModel.fields,
+            settings=self.settings,
+            callbacks=self.callbacks,
         )
-        self.record_form.grid(row=1, padx=10)
-        self.save_button = ttk.Button(self, text="Save", command=self.on_save)
-        self.save_button.grid(sticky=tk.E, row=2, padx=10)
+        self.record_form.grid(row=1, padx=10, sticky=tk.NSEW)
+        self.record_list = v.RecordList(self, self.callbacks)
+        self.record_list.grid(row=1, padx=10, sticky=tk.NSEW)
+        self.populate_recordlist()
         self.status = tk.StringVar()
         self.status_bar = ttk.Label(self, textvariable=self.status)
-        self.status_bar.grid(sticky=EW, row=3, padx=10)
+        self.status_bar.grid(sticky=EW, row=2, padx=10)
         self.records_saved = 0
 
     def load_settings(self):
@@ -67,15 +79,43 @@ class Application(tk.Tk):
         )
         if filename:
             self.filename.set(filename)
+            self.data_model = m.CSVModel(filename=self.filename.get())
+            self.populate_recordlist()
 
     def on_save(self):
         if e := self.record_form.get_errors():
             self.display_errors(e)
             return False
-        m.CSVModel(self.filename.get()).save_record(self.record_form.get())
-        self.records_saved += 1
-        self.status.set(f"{self.records_saved} records saved this session.")
-        self.record_form.reset()
+        data = self.record_form.get()
+        rownum = self.record_form.current_record
+        try:
+            self.data_model.save_record(data, rownum)
+        except IndexError as e:
+            messagebox.showerror(
+                title="Error", message="Invalid row specified", detail=str(e)
+            )
+            self.status.set("Tried to update invalid row")
+        except Exception as e:
+            messagebox.showerror(
+                title="Error", message="Problem saving record", detail=str(e)
+            )
+            self.status.set("Problem saving record")
+        else:
+            self.records_saved += 1
+            self.status.set(f"{self.records_saved} records saved this session.")
+            self.populate_recordlist()
+            if self.record_form.current_record is None:
+                self.record_form.reset()
+
+    def populate_recordlist(self):
+        try:
+            rows = self.data_model.get_all_records()
+        except Exception as e:
+            messagebox.showerror(
+                title="Error", message="Problem reading file", detail=str(e)
+            )
+        else:
+            self.record_list.populate(rows)
 
     def display_errors(self, e: dict[str, str]):
         self.status.set(f"Cannot save, error in fields: {', '.join(e.keys())}")
@@ -83,3 +123,21 @@ class Application(tk.Tk):
         errors = "\n * ".join(e.keys())
         detail = f"The following fields have errors:\n * {errors}"
         messagebox.showerror(title="Error", message=message, detail=detail)
+
+    def show_recordlist(self):
+        self.record_list.tkraise()
+
+    def open_record(self, rownum=None):
+        if rownum is None:
+            record = None
+        else:
+            rownum = int(rownum)
+            try:
+                record = self.data_model.get_record(rownum)
+            except Exception as e:
+                messagebox.showerror(
+                    title="Error", message="Problem reading file", detail=str(e)
+                )
+                return
+        self.record_form.load_record(rownum, data=record)
+        self.record_form.tkraise()

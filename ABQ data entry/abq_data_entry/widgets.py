@@ -325,6 +325,8 @@ class LabelInput(tk.Frame):
     def set(self, value, *args, **kwargs):
         if type(self.variable) == tk.BooleanVar:
             self.variable.set(bool(value))
+        elif self.variable:
+            self.variable.set(value, *args, **kwargs)
         elif type(self.input) in (ttk.Checkbutton, ttk.Radiobutton):
             if value:
                 self.input.select()
