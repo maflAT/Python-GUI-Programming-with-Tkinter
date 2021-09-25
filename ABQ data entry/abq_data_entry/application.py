@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
+from tkinter.font import nametofont
 from datetime import date
 from .constants import EW
 from .images import ABQ_LOGO_32, ABQ_LOGO_64
@@ -18,14 +19,15 @@ class Application(tk.Tk):
         tk.Label(self, image=self.logo).grid(row=0)
         self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
         self.call("wm", "iconphoto", self._w, self.taskbar_icon)
-        self.inserted_rows: list[int] = []
-        self.updated_rows: list[int] = []
 
         default_filename = f"abc_data_record_{date.today().isoformat()}.csv"
         self.filename = tk.StringVar(value=default_filename)
         self.data_model = m.CSVModel(filename=self.filename.get())
         self.settings_model = m.SettingsModel()
         self.load_settings()
+        self.set_font()
+        self.settings["font size"].trace("w", self.set_font)
+
         self.callbacks = {
             "file->select": self.on_file_select,
             "file->quit": self.quit,
@@ -44,11 +46,15 @@ class Application(tk.Tk):
             callbacks=self.callbacks,
         )
         self.record_form.grid(row=1, padx=10, sticky=tk.NSEW)
+
+        self.inserted_rows: list[int] = []
+        self.updated_rows: list[int] = []
         self.record_list = v.RecordList(
             self, self.callbacks, self.inserted_rows, self.updated_rows
         )
         self.record_list.grid(row=1, padx=10, sticky=tk.NSEW)
         self.populate_recordlist()
+
         self.status = tk.StringVar()
         self.status_bar = ttk.Label(self, textvariable=self.status)
         self.status_bar.grid(sticky=EW, row=2, padx=10)
@@ -153,3 +159,10 @@ class Application(tk.Tk):
                 return
         self.record_form.load_record(rownum, data=record)
         self.record_form.tkraise()
+
+    def set_font(self, *args):
+        font_size = self.settings["font size"].get()
+        font_names = ("TkDefaultFont", "TkMenuFont", "TkTextFont")
+        for font in font_names:
+            tk_font = nametofont(font)
+            tk_font.config(size=font_size)

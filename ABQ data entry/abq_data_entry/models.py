@@ -126,6 +126,7 @@ class SettingsModel:
     variables = {
         "autofill date": {"type": "bool", "value": True},
         "autofill sheet data": {"type": "bool", "value": True},
+        "font size": {"type": "int", "value": 9},
     }
 
     def load(self):
