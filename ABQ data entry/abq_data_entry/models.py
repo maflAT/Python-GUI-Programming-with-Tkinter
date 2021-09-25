@@ -80,14 +80,14 @@ class CSVModel:
             # This is an update
             records = self.get_all_records()
             records[row_number] = data
-            with open(self.filename, "w") as fh:
+            with open(self.filename, "w", encoding="utf-8") as fh:
                 writer = csv.DictWriter(fh, fieldnames=self.fields.keys())
                 writer.writeheader()
                 writer.writerows(records)
         else:
             # This is a new record
             newfile = not os.path.exists(self.filename)
-            with open(self.filename, "a") as fh:
+            with open(self.filename, "a", encoding="utf-8") as fh:
                 writer = csv.DictWriter(fh, fieldnames=self.fields.keys())
                 if newfile:
                     writer.writeheader()
@@ -97,7 +97,7 @@ class CSVModel:
         """Import all records from our csv file."""
         if not os.path.exists(self.filename):
             return []
-        with open(self.filename, "r") as fh:
+        with open(self.filename, "r", encoding="utf-8") as fh:
             reader = csv.DictReader(fh)
             missing_fields = set(self.fields.keys()) - set(reader.fieldnames)
             if len(missing_fields) > 0:
@@ -118,9 +118,8 @@ class CSVModel:
 class SettingsModel:
     """A model for saving (and loading) settings"""
 
-    def __init__(self, filename: str = "abq_settings.json", path: str = None) -> None:
-        path = path or os.getenv("APPDATA")
-        self.filepath = os.path.join(path, filename)
+    def __init__(self, filename: str = "abq_settings.json", path: str = "~") -> None:
+        self.filepath = os.path.join(os.path.expanduser(path), filename)
         self.load()
 
     variables = {
@@ -134,7 +133,7 @@ class SettingsModel:
         """Load the settings from file"""
         if not os.path.exists(self.filepath):
             return
-        with open(self.filepath, "r") as fh:
+        with open(self.filepath, "r", encoding="utf-8") as fh:
             raw_values = json.loads(fh.read())
         for key in self.variables:
             if key in raw_values and "value" in raw_values[key]:
@@ -143,7 +142,7 @@ class SettingsModel:
     def save(self, settings: dict[str, dict[str, Any]] = None):
         """Save settings to file"""
         json_string = json.dumps(self.variables)
-        with open(self.filepath, "w") as fh:
+        with open(self.filepath, "w", encoding="utf-8") as fh:
             fh.write(json_string)
 
     def set(self, key: str, value: Any):

@@ -1,3 +1,5 @@
+import os
+import platform
 import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.font import nametofont
@@ -10,10 +12,17 @@ from . import models as m
 class Application(tk.Tk):
     """Application root window"""
 
+    config_dirs = {
+        "Linux": os.environ.get("$XDG_CONFIG_HOME", "~/.config"),
+        "freebsd7": os.environ.get("$XDG_CONFIG_HOME", "~/.config"),
+        "Darwin": "~/Library/Application Support",
+        "Windows": "~/AppData/Local",
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.title("ABQ Data Entry Application")
         self.resizable(width=False, height=False)
+        self.title("ABQ Data Entry Application")
         self.logo = tk.PhotoImage(file=ABQ_LOGO_32)
         tk.Label(self, image=self.logo).grid(row=0)
         self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
@@ -22,7 +31,9 @@ class Application(tk.Tk):
         default_filename = f"abc_data_record_{date.today().isoformat()}.csv"
         self.filename = tk.StringVar(value=default_filename)
         self.data_model = m.CSVModel(filename=self.filename.get())
-        self.settings_model = m.SettingsModel()
+
+        config_dir = self.config_dirs.get(platform.system(), "~")
+        self.settings_model = m.SettingsModel(path=config_dir)
         self.load_settings()
 
         style = ttk.Style()
