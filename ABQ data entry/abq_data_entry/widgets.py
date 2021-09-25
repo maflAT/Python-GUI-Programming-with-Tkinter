@@ -149,7 +149,7 @@ class ValidatedCombobox(ValidatedMixin, ttk.Combobox):
         return valid
 
 
-class ValidatedSpinBox(ValidatedMixin, tk.Spinbox):
+class ValidatedSpinBox(ValidatedMixin, ttk.Spinbox):
     def __init__(
         self,
         *args,
@@ -302,7 +302,7 @@ class LabelInput(tk.Frame):
         self.input: tk.Widget = input_class(self, **input_args)
         self.input.grid(row=1, column=0, sticky=EW)
         self.error = getattr(self.input, "error", tk.StringVar())
-        self.error_label = ttk.Label(self, textvariable=self.error)
+        self.error_label = ttk.Label(self, textvariable=self.error, **label_args)
         self.error_label.grid(row=2, column=0, sticky=EW)
         self.columnconfigure(0, weight=1)
 

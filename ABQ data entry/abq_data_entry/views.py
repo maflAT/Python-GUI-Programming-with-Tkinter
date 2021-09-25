@@ -72,6 +72,13 @@ class DataRecordForm(tk.Frame):
         self.settings = settings
         self.callbacks = callbacks
         self.current_record = None
+
+        style = ttk.Style()
+        style.configure("RecordInfo.TLabel", background="khaki")
+        style.configure("EnvironmentInfo.TLabel", background="lightblue")
+        style.configure("EnvironmentInfo.TCheckbutton", background="lightblue")
+        style.configure("PlantInfo.TLabel", background="lightgreen")
+
         self.record_label = ttk.Label(self)
         self.record_label.grid(row=0, column=0)
 
@@ -93,32 +100,38 @@ class DataRecordForm(tk.Frame):
             parent=record_info,
             label="Date",
             field_spec=fields["Date"],
+            label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=0, column=0)
         self.inputs["Time"] = w.LabelInput(
             parent=record_info,
             label="Time",
             field_spec=fields["Time"],
+            label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=0, column=1)
         self.inputs["Technician"] = w.LabelInput(
             parent=record_info,
             label="Technician",
             field_spec=fields["Technician"],
+            label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=0, column=2)
 
         self.inputs["Lab"] = w.LabelInput(
             parent=record_info,
             label="Lab",
             field_spec=fields["Lab"],
+            label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=1, column=0)
         self.inputs["Plot"] = w.LabelInput(
             parent=record_info,
             label="Plot",
             field_spec=fields["Plot"],
+            label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=1, column=1)
         self.inputs["Seed sample"] = w.LabelInput(
             parent=record_info,
             label="Seed sample",
             field_spec=fields["Seed sample"],
+            label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=1, column=2)
         return record_info
 
@@ -130,21 +143,26 @@ class DataRecordForm(tk.Frame):
             parent=env_info,
             label="Humidity (g/m³)",
             field_spec=fields["Humidity"],
+            label_args={"style": "EnvironmentInfo.TLabel"},
         ).grid(row=0, column=0)
         self.inputs["Light"] = w.LabelInput(
             parent=env_info,
             label="Light (klx)",
             field_spec=fields["Light"],
+            label_args={"style": "EnvironmentInfo.TLabel"},
         ).grid(row=0, column=1)
         self.inputs["Temperature"] = w.LabelInput(
             parent=env_info,
             label="Temperature (°C)",
             field_spec=fields["Temperature"],
+            label_args={"style": "EnvironmentInfo.TLabel"},
         ).grid(row=0, column=2)
         self.inputs["Equipment Fault"] = w.LabelInput(
             parent=env_info,
             label="Equipment Fault",
             field_spec=fields["Equipment Fault"],
+            label_args={"style": "EnvironmentInfo.TLabel"},
+            input_args={"style": "EnvironmentInfo.TCheckbutton"},
         ).grid(row=1, column=0, columnspan=3)
         return env_info
 
@@ -156,16 +174,19 @@ class DataRecordForm(tk.Frame):
             parent=plant_info,
             label="Plants",
             field_spec=fields["Plants"],
+            label_args={"style": "PlantInfo.TLabel"},
         ).grid(row=0, column=0)
         self.inputs["Blossoms"] = w.LabelInput(
             parent=plant_info,
             label="Blossoms",
             field_spec=fields["Blossoms"],
+            label_args={"style": "PlantInfo.TLabel"},
         ).grid(row=0, column=1)
         self.inputs["Fruit"] = w.LabelInput(
             parent=plant_info,
             label="Fruit",
             field_spec=fields["Fruit"],
+            label_args={"style": "PlantInfo.TLabel"},
         ).grid(row=0, column=2)
 
         # Height data
@@ -181,6 +202,7 @@ class DataRecordForm(tk.Frame):
                 "max_var": max_height_var,
                 "focus_update_var": min_height_var,
             },
+            label_args={"style": "PlantInfo.TLabel"},
         ).grid(row=1, column=0)
         self.inputs["Max Height"] = w.LabelInput(
             parent=plant_info,
@@ -190,6 +212,7 @@ class DataRecordForm(tk.Frame):
                 "min_var": min_height_var,
                 "focus_update_var": max_height_var,
             },
+            label_args={"style": "PlantInfo.TLabel"},
         ).grid(row=1, column=1)
         self.inputs["Median Height"] = w.LabelInput(
             parent=plant_info,
@@ -199,6 +222,7 @@ class DataRecordForm(tk.Frame):
                 "min_var": min_height_var,
                 "max_var": max_height_var,
             },
+            label_args={"style": "PlantInfo.TLabel"},
         ).grid(row=1, column=2)
         return plant_info
 
