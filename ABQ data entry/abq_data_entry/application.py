@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from datetime import date
 from .constants import EW
+from .images import ABQ_LOGO_32, ABQ_LOGO_64
 from . import views as v
 from . import models as m
 
@@ -13,11 +14,13 @@ class Application(tk.Tk):
         super().__init__(*args, **kwargs)
         self.title("ABQ Data Entry Application")
         self.resizable(width=False, height=False)
-        ttk.Label(
-            self,
-            text="ABQ Data Entry Application",
-            font=("TkDefaultFont", 16),
-        ).grid(row=0)
+        self.logo = tk.PhotoImage(file=ABQ_LOGO_32)
+        tk.Label(self, image=self.logo).grid(row=0)
+        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
+        self.call("wm", "iconphoto", self._w, self.taskbar_icon)
+        self.inserted_rows: list[int] = []
+        self.updated_rows: list[int] = []
+
         default_filename = f"abc_data_record_{date.today().isoformat()}.csv"
         self.filename = tk.StringVar(value=default_filename)
         self.data_model = m.CSVModel(filename=self.filename.get())
@@ -41,7 +44,9 @@ class Application(tk.Tk):
             callbacks=self.callbacks,
         )
         self.record_form.grid(row=1, padx=10, sticky=tk.NSEW)
-        self.record_list = v.RecordList(self, self.callbacks)
+        self.record_list = v.RecordList(
+            self, self.callbacks, self.inserted_rows, self.updated_rows
+        )
         self.record_list.grid(row=1, padx=10, sticky=tk.NSEW)
         self.populate_recordlist()
         self.status = tk.StringVar()
@@ -81,6 +86,8 @@ class Application(tk.Tk):
             self.filename.set(filename)
             self.data_model = m.CSVModel(filename=self.filename.get())
             self.populate_recordlist()
+            self.inserted_rows = []
+            self.updated_rows = []
 
     def on_save(self):
         if e := self.record_form.get_errors():
@@ -103,6 +110,11 @@ class Application(tk.Tk):
         else:
             self.records_saved += 1
             self.status.set(f"{self.records_saved} records saved this session.")
+            if rownum is not None:
+                self.updated_rows.append(rownum)
+            else:
+                rownum = len(self.data_model.get_all_records()) - 1
+                self.inserted_rows.append(rownum)
             self.populate_recordlist()
             if self.record_form.current_record is None:
                 self.record_form.reset()

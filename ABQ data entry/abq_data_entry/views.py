@@ -71,7 +71,9 @@ class DataRecordForm(tk.Frame):
         self.reset()
 
     def init_record_info(self, fields: dict[str, dict]):
-        record_info = tk.LabelFrame(self, text="Record Information")
+        record_info = tk.LabelFrame(
+            self, text="Record Information", bg="khaki", padx=10, pady=10
+        )
         self.inputs["Date"] = w.LabelInput(
             parent=record_info,
             label="Date",
@@ -106,7 +108,9 @@ class DataRecordForm(tk.Frame):
         return record_info
 
     def init_env_info(self, fields: dict[str, dict]):
-        env_info = tk.LabelFrame(self, text="Environment Data")
+        env_info = tk.LabelFrame(
+            self, text="Environment Data", bg="lightblue", padx=10, pady=10
+        )
         self.inputs["Humidity"] = w.LabelInput(
             parent=env_info,
             label="Humidity (g/m³)",
@@ -130,7 +134,9 @@ class DataRecordForm(tk.Frame):
         return env_info
 
     def init_plant_info(self, fields: dict[str, dict]):
-        plant_info = tk.LabelFrame(self, text="Plant Data")
+        plant_info = tk.LabelFrame(
+            self, text="Plant Data", bg="lightgreen", padx=10, pady=10
+        )
         self.inputs["Plants"] = w.LabelInput(
             parent=plant_info,
             label="Plants",
@@ -187,6 +193,8 @@ class DataRecordForm(tk.Frame):
             label="Notes",
             input_class=tk.Text,
             input_args={"width": 75, "height": 10},
+            padx=10,
+            pady=10,
         )
         return self.inputs["Notes"]
 
@@ -261,14 +269,25 @@ class RecordList(tk.Frame):
     default_minwidth = 10
     default_anchor = tk.CENTER
 
-    def __init__(self, parent: tk.Widget, callbacks: dict, *args, **kwargs) -> None:
+    def __init__(
+        self,
+        parent: tk.Widget,
+        callbacks: dict[str, Callable],
+        inserted: list[int],
+        updated: list[int],
+        *args,
+        **kwargs,
+    ) -> None:
         super().__init__(parent, *args, **kwargs)
         self.callbacks = callbacks
+        self.inserted = inserted
+        self.updated = updated
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+
         self.tv = ttk.Treeview(
             self, columns=list(self.column_defs.keys())[1:], selectmode="browse"
         )
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
         self.tv.grid(row=0, column=0, sticky=tk.NSEW)
         for name, definition in self.column_defs.items():
             label = definition.get("label", "")
@@ -280,6 +299,8 @@ class RecordList(tk.Frame):
             self.tv.column(
                 name, anchor=anchor, minwidth=minwidth, width=width, stretch=stretch
             )
+        self.tv.tag_configure("inserted", background="lightgreen")
+        self.tv.tag_configure("updated", background="lightblue")
         self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tv.yview)
         self.tv.configure(yscrollcommand=self.scrollbar.set)
         self.scrollbar.grid(row=0, column=1, sticky="NSW")
@@ -291,8 +312,16 @@ class RecordList(tk.Frame):
             self.tv.delete(row)
         valuekeys = list(self.column_defs.keys())[1:]
         for rownum, rowdata in enumerate(rows):
+            if self.inserted and rownum in self.inserted:
+                tag = "inserted"
+            if self.updated and rownum in self.updated:
+                tag = "updated"
+            else:
+                tag = ""
             values = [rowdata[key] for key in valuekeys]
-            self.tv.insert("", "end", iid=str(rownum), text=str(rownum), values=values)
+            self.tv.insert(
+                "", "end", iid=str(rownum), text=str(rownum), values=values, tag=tag
+            )
         if rows:
             self.tv.focus_set()
             self.tv.selection_set(0)

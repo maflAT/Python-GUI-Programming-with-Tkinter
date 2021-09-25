@@ -76,19 +76,22 @@ class CSVModel:
 
     def save_record(self, data: dict, row_number: int = None):
         """Save a dict of data to the CSV file"""
-        if row_number is None:
-            mode = "a"
-            records = [data]
-        else:
-            mode = "w"
+        if row_number is not None:
+            # This is an update
             records = self.get_all_records()
             records[row_number] = data
-        newfile = not os.path.exists(self.filename)
-        with open(self.filename, mode) as fh:
-            csv_writer = csv.DictWriter(fh, fieldnames=self.fields.keys())
-            if newfile:
-                csv_writer.writeheader()
-            csv_writer.writerows(records)
+            with open(self.filename, "w") as fh:
+                writer = csv.DictWriter(fh, fieldnames=self.fields.keys())
+                writer.writeheader()
+                writer.writerows(records)
+        else:
+            # This is a new record
+            newfile = not os.path.exists(self.filename)
+            with open(self.filename, "a") as fh:
+                writer = csv.DictWriter(fh, fieldnames=self.fields.keys())
+                if newfile:
+                    writer.writeheader()
+                writer.writerow(data)
 
     def get_all_records(self):
         """Import all records from our csv file."""
