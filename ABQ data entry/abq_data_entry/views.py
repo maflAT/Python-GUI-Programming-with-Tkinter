@@ -4,12 +4,15 @@ from datetime import date
 from tkinter import messagebox
 from typing import Any, Callable, Optional
 from . import widgets as w
-from .constants import EW
 
 
 class MainMenu(tk.Menu):
     def __init__(
-        self, parent, settings: dict, callbacks: dict[str, Callable], **kwargs
+        self,
+        parent,
+        settings: dict[str, tk.Variable],
+        callbacks: dict[str, Callable],
+        **kwargs,
     ) -> None:
         super().__init__(parent, **kwargs)
 
@@ -35,6 +38,17 @@ class MainMenu(tk.Menu):
                 label=size, value=size, variable=settings["font size"]
             )
         options_menu.add_cascade(label="Font size", menu=font_size_menu)
+
+        #   theme selection sub-menu
+        themes_menu = tk.Menu(self, tearoff=False)
+        for theme in ttk.Style().theme_names():
+            themes_menu.add_radiobutton(
+                label=theme,
+                value=theme,
+                variable=settings["theme"],
+            )
+        options_menu.add_cascade(label="Theme", menu=themes_menu)
+        settings["theme"].trace("w", self.on_theme_change)
         self.add_cascade(label="Options", menu=options_menu)
 
         # go menu
@@ -53,6 +67,12 @@ class MainMenu(tk.Menu):
         about_message = "ABQ Data Entry"
         about_detail = "by Alan D Moore\nFor assistance please contact the author."
         messagebox.showinfo(title="About", message=about_message, detail=about_detail)
+
+    def on_theme_change(self, *args):
+        """Popup a message about theme changes"""
+        message = "Change requires restart"
+        detail = "Theme changes do not take effect until application resart"
+        messagebox.showwarning(title="Warning", message=message, detail=detail)
 
 
 class DataRecordForm(tk.Frame):
@@ -82,9 +102,9 @@ class DataRecordForm(tk.Frame):
         self.record_label = ttk.Label(self)
         self.record_label.grid(row=0, column=0)
 
-        self.init_record_info(fields).grid(sticky=EW, row=1, column=0)
-        self.init_env_info(fields).grid(sticky=EW, row=2, column=0)
-        self.init_plant_info(fields).grid(sticky=EW, row=3, column=0)
+        self.init_record_info(fields).grid(sticky=tk.EW, row=1, column=0)
+        self.init_env_info(fields).grid(sticky=tk.EW, row=2, column=0)
+        self.init_plant_info(fields).grid(sticky=tk.EW, row=3, column=0)
         self.init_notes().grid(sticky=tk.W, row=4, column=0)
         self.save_button = ttk.Button(
             self, text="Save", command=self.callbacks["on_save"]

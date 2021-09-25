@@ -1,8 +1,6 @@
 import tkinter.constants as tkc
 from enum import Enum
 
-EW = tkc.EW
-
 
 class FieldTypes:
     string = 1

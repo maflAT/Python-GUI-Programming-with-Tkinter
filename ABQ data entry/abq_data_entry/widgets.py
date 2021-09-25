@@ -3,25 +3,36 @@ from tkinter import ttk
 from datetime import date
 from decimal import Decimal, InvalidOperation
 from typing import Any, Optional
-from .constants import EW, TkAction, TkEvent, FieldTypes as FT
+from .constants import TkAction, TkEvent, FieldTypes as FT
 
 
 class ValidatedMixin:
     """Adds a validation functionality to an input widget."""
 
-    def __init__(self: ttk.Widget, *args, error_var=None, **kwargs) -> None:
-        self.error: Optional[tk.StringVar] = error_var or tk.StringVar()
+    def __init__(
+        self: ttk.Widget, *args, error_var: tk.Variable = None, **kwargs
+    ) -> None:
+        self.error = error_var or tk.StringVar()
         super().__init__(*args, **kwargs)
+
         val_cmd = self.register(self._validate)
         inv_cmd = self.register(self._invalid)
+
+        style = ttk.Style()
+        widget_class = self.winfo_class()
+        validated_style = "ValidatedInput." + widget_class
+        style.map(
+            validated_style,
+            foreground=[("invalid", "white"), ("!invalid", "black")],
+            fieldbackground=[("invalid", "darkred"), ("!invalid", "white")],
+        )
+
         self.configure(
+            style=validated_style,
             validate="all",
             validatecommand=(val_cmd, "%P", "%s", "%S", "%V", "%i", "%d"),
             invalidcommand=(inv_cmd, "%P", "%s", "%S", "%V", "%i", "%d"),
         )
-
-    def _toggle_error(self: ttk.Widget, on: bool = False):
-        self.configure(foreground=("red" if on else "black"))
 
     def _validate(
         self,
@@ -32,7 +43,6 @@ class ValidatedMixin:
         index: str,
         action: str,
     ) -> bool:
-        self._toggle_error(False)
         self.error.set("")
         valid = True
         if event == "focusout":
@@ -66,7 +76,7 @@ class ValidatedMixin:
         if event == "focusout":
             self._focusout_invalid(event=event)
         elif event == "key":
-            valid = self._key_invalid(
+            self._key_invalid(
                 proposed=proposed,
                 current=current,
                 char=char,
@@ -76,7 +86,7 @@ class ValidatedMixin:
             )
 
     def _focusout_invalid(self, **kwargs) -> None:
-        self._toggle_error(True)
+        ...
 
     def _key_invalid(self, **kwargs) -> None:
         ...
@@ -297,16 +307,16 @@ class LabelInput(tk.Frame):
             input_args["variable"] = self.variable
         else:
             self.label = ttk.Label(self, text=label, **label_args)
-            self.label.grid(row=0, column=0, sticky=EW)
+            self.label.grid(row=0, column=0, sticky=tk.EW)
             input_args["textvariable"] = self.variable
         self.input: tk.Widget = input_class(self, **input_args)
-        self.input.grid(row=1, column=0, sticky=EW)
+        self.input.grid(row=1, column=0, sticky=tk.EW)
         self.error = getattr(self.input, "error", tk.StringVar())
         self.error_label = ttk.Label(self, textvariable=self.error, **label_args)
-        self.error_label.grid(row=2, column=0, sticky=EW)
+        self.error_label.grid(row=2, column=0, sticky=tk.EW)
         self.columnconfigure(0, weight=1)
 
-    def grid(self, sticky=EW, **kwargs):
+    def grid(self, sticky=tk.EW, **kwargs):
         super().grid(sticky=sticky, **kwargs)
         return self
 

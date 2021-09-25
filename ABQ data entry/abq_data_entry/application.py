@@ -2,7 +2,6 @@ import tkinter as tk
 from tkinter import ttk, messagebox, filedialog
 from tkinter.font import nametofont
 from datetime import date
-from .constants import EW
 from .images import ABQ_LOGO_32, ABQ_LOGO_64
 from . import views as v
 from . import models as m
@@ -25,6 +24,12 @@ class Application(tk.Tk):
         self.data_model = m.CSVModel(filename=self.filename.get())
         self.settings_model = m.SettingsModel()
         self.load_settings()
+
+        style = ttk.Style()
+        theme = self.settings.get("theme").get()
+        if theme in style.theme_names():
+            style.theme_use(theme)
+
         self.set_font()
         self.settings["font size"].trace("w", self.set_font)
 
@@ -57,7 +62,7 @@ class Application(tk.Tk):
 
         self.status = tk.StringVar()
         self.status_bar = ttk.Label(self, textvariable=self.status)
-        self.status_bar.grid(sticky=EW, row=2, padx=10)
+        self.status_bar.grid(sticky=tk.EW, row=2, padx=10)
         self.records_saved = 0
 
     def load_settings(self):
