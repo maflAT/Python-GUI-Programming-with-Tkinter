@@ -1,78 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 from datetime import date
-from tkinter import messagebox
 from typing import Any, Callable, Optional
 from . import widgets as w
-
-
-class MainMenu(tk.Menu):
-    def __init__(
-        self,
-        parent,
-        settings: dict[str, tk.Variable],
-        callbacks: dict[str, Callable],
-        **kwargs,
-    ) -> None:
-        super().__init__(parent, **kwargs)
-
-        # file menu
-        file_menu = tk.Menu(self, tearoff=False)
-        file_menu.add_command(label="Select file...", command=callbacks["file->select"])
-        file_menu.add_separator()
-        file_menu.add_command(label="Quit", command=callbacks["file->quit"])
-        self.add_cascade(label="File", menu=file_menu)
-
-        # options menu
-        options_menu = tk.Menu(self, tearoff=False)
-        options_menu.add_checkbutton(
-            label="Autofill Date", variable=settings["autofill date"]
-        )
-        options_menu.add_checkbutton(
-            label="Autofill Sheet data", variable=settings["autofill sheet data"]
-        )
-        #   font size sub-menu
-        font_size_menu = tk.Menu(self, tearoff=False)
-        for size in range(6, 17):
-            font_size_menu.add_radiobutton(
-                label=size, value=size, variable=settings["font size"]
-            )
-        options_menu.add_cascade(label="Font size", menu=font_size_menu)
-
-        #   theme selection sub-menu
-        themes_menu = tk.Menu(self, tearoff=False)
-        for theme in ttk.Style().theme_names():
-            themes_menu.add_radiobutton(
-                label=theme,
-                value=theme,
-                variable=settings["theme"],
-            )
-        options_menu.add_cascade(label="Theme", menu=themes_menu)
-        settings["theme"].trace("w", self.on_theme_change)
-        self.add_cascade(label="Options", menu=options_menu)
-
-        # go menu
-        go_menu = tk.Menu(self, tearoff=False)
-        go_menu.add_command(label="Record List", command=callbacks["show_recordlist"])
-        go_menu.add_command(label="New Record", command=callbacks["new_record"])
-        self.add_cascade(label="Go", menu=go_menu)
-
-        # help menu
-        help_menu = tk.Menu(self, tearoff=False)
-        help_menu.add_command(label="About", command=self.show_about)
-        self.add_cascade(label="Help", menu=help_menu)
-
-    def show_about(self):
-        """Show the about dialog"""
-        about_message = "ABQ Data Entry"
-        about_detail = "by Alan D Moore\nFor assistance please contact the author."
-        messagebox.showinfo(title="About", message=about_message, detail=about_detail)
-
-    def on_theme_change(self, *args):
-        """Popup a message about theme changes"""
-        message = "Change requires restart"
-        detail = "Theme changes do not take effect until application resart"
-        messagebox.showwarning(title="Warning", message=message, detail=detail)
 
 
 class DataRecordForm(tk.Frame):

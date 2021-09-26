@@ -1,12 +1,14 @@
 import os
 import platform
 import tkinter as tk
-from tkinter import ttk, messagebox, filedialog
-from tkinter.font import nametofont
 from datetime import date
-from .images import ABQ_LOGO_32, ABQ_LOGO_64
-from . import views as v
+from tkinter import filedialog, messagebox, ttk
+from tkinter.font import nametofont
+
 from . import models as m
+from . import views as v
+from .images import ABQ_LOGO_32, ABQ_LOGO_64
+from .mainmenu import get_main_menu_for_os
 
 
 class Application(tk.Tk):
@@ -21,29 +23,17 @@ class Application(tk.Tk):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.resizable(width=False, height=False)
-        self.title("ABQ Data Entry Application")
-        self.logo = tk.PhotoImage(file=ABQ_LOGO_32)
-        tk.Label(self, image=self.logo).grid(row=0)
-        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
-        self.call("wm", "iconphoto", self._w, self.taskbar_icon)
-
+        # init data model
         default_filename = f"abc_data_record_{date.today().isoformat()}.csv"
         self.filename = tk.StringVar(value=default_filename)
         self.data_model = m.CSVModel(filename=self.filename.get())
 
+        # init settings
         config_dir = self.config_dirs.get(platform.system(), "~")
         self.settings_model = m.SettingsModel(path=config_dir)
         self.load_settings()
 
-        style = ttk.Style()
-        theme = self.settings.get("theme").get()
-        if theme in style.theme_names():
-            style.theme_use(theme)
-
-        self.set_font()
-        self.settings["font size"].trace("w", self.set_font)
-
+        # callbacks
         self.callbacks = {
             "file->select": self.on_file_select,
             "file->quit": self.quit,
@@ -52,9 +42,34 @@ class Application(tk.Tk):
             "on_open_record": self.open_record,
             "on_save": self.on_save,
         }
-        menu = v.MainMenu(self, settings=self.settings, callbacks=self.callbacks)
+
+        # set global theme
+        style = ttk.Style()
+        theme = self.settings.get("theme").get()
+        if theme in style.theme_names():
+            style.theme_use(theme)
+
+        # set global fonts
+        self.set_font()
+        self.settings["font size"].trace("w", self.set_font)
+
+        # main window styling
+        self.resizable(width=False, height=False)
+        self.title("ABQ Data Entry Application")
+        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
+        self.call("wm", "iconphoto", self._w, self.taskbar_icon)
+
+        # top level widgets
+        #   main menu
+        menu_class = get_main_menu_for_os(platform.system())
+        menu = menu_class(self, settings=self.settings, callbacks=self.callbacks)
         self.config(menu=menu)
 
+        #   logo / header
+        self.logo = tk.PhotoImage(file=ABQ_LOGO_32)
+        tk.Label(self, image=self.logo).grid(row=0)
+
+        #   record form
         self.record_form = v.DataRecordForm(
             self,
             fields=m.CSVModel.fields,
@@ -63,6 +78,7 @@ class Application(tk.Tk):
         )
         self.record_form.grid(row=1, padx=10, sticky=tk.NSEW)
 
+        #   record list
         self.inserted_rows: list[int] = []
         self.updated_rows: list[int] = []
         self.record_list = v.RecordList(
@@ -71,6 +87,7 @@ class Application(tk.Tk):
         self.record_list.grid(row=1, padx=10, sticky=tk.NSEW)
         self.populate_recordlist()
 
+        # status bar
         self.status = tk.StringVar()
         self.status_bar = ttk.Label(self, textvariable=self.status)
         self.status_bar.grid(sticky=tk.EW, row=2, padx=10)
