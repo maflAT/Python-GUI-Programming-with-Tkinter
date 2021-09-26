@@ -98,7 +98,9 @@ class CSVModel:
         if not os.path.exists(self.filename):
             return []
         with open(self.filename, "r", encoding="utf-8") as fh:
-            reader = csv.DictReader(fh)
+            reader = csv.DictReader(
+                list(fh.readlines())  # mock open can't handle direct iteration over fh
+            )
             missing_fields = set(self.fields.keys()) - set(reader.fieldnames)
             if len(missing_fields) > 0:
                 raise Exception(f"File is missing fields: {', '.join(missing_fields)}")

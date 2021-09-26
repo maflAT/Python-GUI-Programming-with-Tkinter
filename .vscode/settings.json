@@ -17,5 +17,14 @@
         "**/Thumbs.db": true,
         "LICENSE": true
     },
+    "python.testing.pytestEnabled": false,
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./ABQ data entry",
+        "-p",
+        "test_*.py"
+    ],
+    "python.testing.unittestEnabled": true,
     "restructuredtext.confPath": ""
 }
