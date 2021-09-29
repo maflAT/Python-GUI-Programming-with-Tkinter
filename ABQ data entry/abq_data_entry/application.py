@@ -1,7 +1,6 @@
 import os
 import platform
 import tkinter as tk
-from datetime import date
 from tkinter import filedialog, messagebox, ttk
 from tkinter.font import nametofont
 
@@ -23,15 +22,16 @@ class Application(tk.Tk):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        # init data model
-        default_filename = f"abc_data_record_{date.today().isoformat()}.csv"
-        self.filename = tk.StringVar(value=default_filename)
-        self.data_model = m.CSVModel(filename=self.filename.get())
-
         # init settings
         config_dir = self.config_dirs.get(platform.system(), "~")
         self.settings_model = m.SettingsModel(path=config_dir)
         self.load_settings()
+
+        # init data model
+        self.database_login()
+        if not hasattr(self, "data_model"):
+            self.destroy()
+            return
 
         # callbacks
         self.callbacks = {
@@ -41,6 +41,8 @@ class Application(tk.Tk):
             "new_record": self.open_record,
             "on_open_record": self.open_record,
             "on_save": self.on_save,
+            "get_seed_sample": self.get_current_seed_sample,
+            "get_check_tech": self.get_tech_for_lab_check,
         }
 
         # set global theme
@@ -72,7 +74,7 @@ class Application(tk.Tk):
         #   record form
         self.record_form = v.DataRecordForm(
             self,
-            fields=m.CSVModel.fields,
+            fields=self.data_model.fields,
             settings=self.settings,
             callbacks=self.callbacks,
         )
@@ -133,14 +135,8 @@ class Application(tk.Tk):
             self.display_errors(e)
             return False
         data = self.record_form.get()
-        rownum = self.record_form.current_record
         try:
-            self.data_model.save_record(data, rownum)
-        except IndexError as e:
-            messagebox.showerror(
-                title="Error", message="Invalid row specified", detail=str(e)
-            )
-            self.status.set("Tried to update invalid row")
+            self.data_model.save_record(data)
         except Exception as e:
             messagebox.showerror(
                 title="Error", message="Problem saving record", detail=str(e)
@@ -149,14 +145,14 @@ class Application(tk.Tk):
         else:
             self.records_saved += 1
             self.status.set(f"{self.records_saved} records saved this session.")
-            if rownum is not None:
-                self.updated_rows.append(rownum)
-            else:
-                rownum = len(self.data_model.get_all_records()) - 1
-                self.inserted_rows.append(rownum)
-            self.populate_recordlist()
-            if self.record_form.current_record is None:
-                self.record_form.reset()
+        key = (data["Date"], data["Time"], data["Lab"], data["Plot"])
+        if self.data_model.last_write == "update":
+            self.updated_rows.append(key)
+        else:
+            self.inserted_rows.append(key)
+        self.populate_recordlist()
+        if self.data_model.last_write == "insert":
+            self.record_form.reset()
 
     def populate_recordlist(self):
         try:
@@ -178,19 +174,18 @@ class Application(tk.Tk):
     def show_recordlist(self):
         self.record_list.tkraise()
 
-    def open_record(self, rownum=None):
-        if rownum is None:
+    def open_record(self, rowkey=None):
+        if rowkey is None:
             record = None
         else:
-            rownum = int(rownum)
             try:
-                record = self.data_model.get_record(rownum)
+                record = self.data_model.get_record(*rowkey)
             except Exception as e:
                 messagebox.showerror(
                     title="Error", message="Problem reading file", detail=str(e)
                 )
                 return
-        self.record_form.load_record(rownum, data=record)
+        self.record_form.load_record(rowkey, data=record)
         self.record_form.tkraise()
 
     def set_font(self, *args):
@@ -199,3 +194,49 @@ class Application(tk.Tk):
         for font in font_names:
             tk_font = nametofont(font)
             tk_font.config(size=font_size)
+
+    def database_login(self):
+        db_host = self.settings["db_host"].get()
+        db_name = self.settings["db_name"].get()
+        title = f"Login to {db_name} at {db_host}"
+        error = ""
+
+        while True:
+            login = v.LoginDialog(self, title, error)
+            if not login.result:
+                break
+            username, password = login.result
+            try:
+                self.data_model = m.SQLModel(db_host, db_name, username, password)
+            except m.pg.OperationalError:
+                error = "Login Failed"
+            else:
+                break
+
+    def get_current_seed_sample(self, *args):
+        if not (
+            hasattr(self, "record_form") and self.settings["autofill sheet data"].get()
+        ):
+            return
+        data = self.record_form.get()
+        plot = data["Plot"]
+        lab = data["Lab"]
+        if plot and lab:
+            seed = self.data_model.get_current_seed_sample(lab, plot)
+            self.record_form.inputs["Seed sample"].set(seed)
+            self.record_form.focus_next_empty()
+
+    def get_tech_for_lab_check(self, *args):
+        if not (
+            hasattr(self, "record_form") and self.settings["autofill sheet data"].get()
+        ):
+            return
+        data = self.record_form.get()
+        date = data["Date"]
+        time = data["Time"]
+        lab = data["Lab"]
+        if all([date, time, lab]):
+            check = self.data_model.get_lab_check(date, time, lab)
+            tech = check["lab_tech"] if check else ""
+            self.record_form.inputs["Technician"].set(tech)
+            self.record_form.focus_next_empty()

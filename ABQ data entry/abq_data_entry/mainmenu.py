@@ -22,12 +22,6 @@ class GenericMainMenu(tk.Menu):
         # file menu
         file_menu = tk.Menu(self, tearoff=False)
         file_menu.add_command(
-            label="Select file...",
-            command=self.callbacks["file->select"],
-            accelerator="Ctrl+O",
-        )
-        file_menu.add_separator()
-        file_menu.add_command(
             label="Quit", command=self.callbacks["file->quit"], accelerator="Ctrl+Q"
         )
         self.add_cascade(label="File", menu=file_menu)
@@ -113,12 +107,6 @@ class WindowsMainMenu(GenericMainMenu):
     def _build_menu(self):
         # file menu
         file_menu = tk.Menu(self, tearoff=False)
-        file_menu.add_command(
-            label="Select file...",
-            command=self.callbacks["file->select"],
-            accelerator="Ctrl+O",
-        )
-        file_menu.add_separator()
         file_menu.add_command(label="Exit", command=self.callbacks["file->quit"])
         self.add_cascade(label="File", menu=file_menu)
 

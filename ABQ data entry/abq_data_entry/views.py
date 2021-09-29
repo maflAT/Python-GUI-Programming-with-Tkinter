@@ -1,5 +1,6 @@
 import tkinter as tk
 from tkinter import ttk
+from tkinter.simpledialog import Dialog
 from datetime import date
 from typing import Any, Callable, Optional
 from . import widgets as w
@@ -40,6 +41,12 @@ class DataRecordForm(tk.Frame):
             self, text="Save", command=self.callbacks["on_save"]
         )
         self.save_button.grid(sticky=tk.E, row=5, padx=10)
+
+        for field in ("Lab", "Plot"):
+            self.inputs[field].variable.trace("w", self.callbacks["get_seed_sample"])
+        for field in ("Date", "Time", "Lab"):
+            self.inputs[field].variable.trace("w", self.callbacks["get_check_tech"])
+
         self.reset()
 
     def init_record_info(self, fields: dict[str, dict]):
@@ -58,23 +65,23 @@ class DataRecordForm(tk.Frame):
             field_spec=fields["Time"],
             label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=0, column=1)
-        self.inputs["Technician"] = w.LabelInput(
-            parent=record_info,
-            label="Technician",
-            field_spec=fields["Technician"],
-            label_args={"style": "RecordInfo.TLabel"},
-        ).grid(row=0, column=2)
-
         self.inputs["Lab"] = w.LabelInput(
             parent=record_info,
             label="Lab",
             field_spec=fields["Lab"],
             label_args={"style": "RecordInfo.TLabel"},
-        ).grid(row=1, column=0)
+        ).grid(row=0, column=2)
+
         self.inputs["Plot"] = w.LabelInput(
             parent=record_info,
             label="Plot",
             field_spec=fields["Plot"],
+            label_args={"style": "RecordInfo.TLabel"},
+        ).grid(row=1, column=0)
+        self.inputs["Technician"] = w.LabelInput(
+            parent=record_info,
+            label="Technician",
+            field_spec=fields["Technician"],
             label_args={"style": "RecordInfo.TLabel"},
         ).grid(row=1, column=1)
         self.inputs["Seed sample"] = w.LabelInput(
@@ -206,18 +213,18 @@ class DataRecordForm(tk.Frame):
         # set defaults
         if self.settings["autofill date"].get():
             self.inputs["Date"].set(date.today().isoformat())
-            self.inputs["Time"].input.focus()
+            self.focus_next_empty()
         if not self.settings["autofill sheet data"].get() or (
             plot in ("", plot_values[-1])
         ):
-            self.inputs["Time"].input.focus()
+            self.focus_next_empty()
             return
         self.inputs["Lab"].set(lab)
         self.inputs["Time"].set(time)
         self.inputs["Technician"].set(technician)
         next_plot_idx = plot_values.index(plot) + 1
         self.inputs["Plot"].set(plot_values[next_plot_idx])
-        self.inputs["Seed sample"].input.focus()
+        self.focus_next_empty()
 
     def get_errors(self):
         """Get a list of field errors in the form."""
@@ -229,19 +236,26 @@ class DataRecordForm(tk.Frame):
                 errors[name] = e
         return errors
 
-    def load_record(self, rownum, data: Optional[dict[str, str]] = None):
-        self.current_record = rownum
-        if rownum is None:
+    def load_record(self, rowkey: tuple, data: Optional[dict[str, str]] = None):
+        self.current_record = rowkey
+        if rowkey is None:
             self.reset()
             self.record_label.config(text="New Record")
             return
-        self.record_label.config(text=f"Record #{rownum}")
+        text = "Record for Lab {2}, Plot {3} at {0} {1}".format(*rowkey)
+        self.record_label.config(text=text)
         for key, widget in self.inputs.items():
             self.inputs[key].set(data.get(key, ""))
             try:
                 widget.input.trigger_focusout_validation()
             except AttributeError:
                 pass
+
+    def focus_next_empty(self):
+        for labelwidget in self.inputs.values():
+            if labelwidget.get() == "":
+                labelwidget.input.focus()
+                break
 
 
 class RecordList(tk.Frame):
@@ -291,7 +305,7 @@ class RecordList(tk.Frame):
         self.tv.tag_configure("inserted", background="lightgreen")
         self.tv.tag_configure("updated", background="lightblue")
         self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL, command=self.tv.yview)
-        self.tv.configure(yscrollcommand=self.scrollbar.set)
+        self.tv.configure(show="headings", yscrollcommand=self.scrollbar.set)
         self.scrollbar.grid(row=0, column=1, sticky="NSW")
         self.tv.bind("<<TreeviewOpen>>", self.on_open_record)
 
@@ -300,21 +314,57 @@ class RecordList(tk.Frame):
         for row in self.tv.get_children():
             self.tv.delete(row)
         valuekeys = list(self.column_defs.keys())[1:]
-        for rownum, rowdata in enumerate(rows):
-            if self.inserted and rownum in self.inserted:
+        for rowdata in rows:
+            rowkey = (
+                str(rowdata["Date"]),
+                rowdata["Time"],
+                rowdata["Lab"],
+                str(rowdata["Plot"]),
+            )
+            values = [rowdata[key] for key in valuekeys]
+            if self.inserted and rowkey in self.inserted:
                 tag = "inserted"
-            if self.updated and rownum in self.updated:
+            if self.updated and rowkey in self.updated:
                 tag = "updated"
             else:
                 tag = ""
-            values = [rowdata[key] for key in valuekeys]
+            stringkey = "|".join(rowkey)
             self.tv.insert(
-                "", "end", iid=str(rownum), text=str(rownum), values=values, tag=tag
+                "", "end", iid=stringkey, text=stringkey, values=values, tag=tag
             )
         if rows:
             self.tv.focus_set()
-            self.tv.selection_set(0)
-            self.tv.focus("0")
+            firstrow = self.tv.identify_row(0)
+            self.tv.selection_set(firstrow)
+            self.tv.focus(firstrow)
 
     def on_open_record(self, *args):
-        self.callbacks["on_open_record"](self.tv.selection()[0])
+        self.callbacks["on_open_record"](self.tv.selection()[0].split("|"))
+
+
+class LoginDialog(Dialog):
+    """Login Dialog class for database connection."""
+
+    def __init__(self, parent, title: str, error: str = "") -> None:
+        self.pw = tk.StringVar()
+        self.user = tk.StringVar()
+        self.error = tk.StringVar(value=error)
+        super().__init__(parent, title=title)
+
+    def body(self, parent):
+        """Dialog form is defined here."""
+        lf = tk.Frame(self)
+        ttk.Label(lf, text="Login ot ABQ", font="Sans 20").grid()
+        if self.error.get():
+            tk.Label(lf, textvariable=self.error, bg="darkred", fg="white").grid()
+        ttk.Label(lf, text="User name:").grid()
+        self.username_inp = ttk.Entry(lf, textvariable=self.user)
+        self.username_inp.grid()
+        ttk.Label(lf, text="Password:").grid()
+        self.password_inp = ttk.Entry(lf, show="*", textvariable=self.pw)
+        self.password_inp.grid()
+        lf.pack()
+        return self.username_inp
+
+    def apply(self):
+        self.result = (self.user.get(), self.pw.get())
