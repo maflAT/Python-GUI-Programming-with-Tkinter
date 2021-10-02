@@ -98,3 +98,11 @@ CREATE VIEW data_record_view AS (
         AND pc.time = lc.time
         JOIN lab_techs AS lt ON lc.lab_tech_id = lt.id
 );
+
+CREATE TABLE local_weather (
+    datetime TIMESTAMP(0) WITH TIME ZONE PRIMARY KEY,
+    temperature NUMERIC(5, 2),
+    rel_hum NUMERIC(5, 2),
+    pressure NUMERIC(7, 2),
+    conditions VARCHAR(32)
+);

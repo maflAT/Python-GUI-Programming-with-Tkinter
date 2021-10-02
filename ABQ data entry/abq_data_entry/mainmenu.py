@@ -68,6 +68,13 @@ class GenericMainMenu(tk.Menu):
         )
         self.add_cascade(label="Go", menu=go_menu)
 
+        # tools menu
+        tools_menu = tk.Menu(self, tearoff=False)
+        tools_menu.add_command(
+            label="Update weather Data", command=self.callbacks["'update_weather_data'"]
+        )
+        self.add_cascade(label="Tools", menu=tools_menu)
+
         # help menu
         help_menu = tk.Menu(self, tearoff=False)
         help_menu.add_command(label="About", command=self.show_about)
@@ -139,6 +146,13 @@ class WindowsMainMenu(GenericMainMenu):
         self.settings["theme"].trace("w", self.on_theme_change)
         options_menu.add_cascade(label="Theme", menu=themes_menu)
         tools_menu.add_cascade(label="Options", menu=options_menu)
+        self.add_cascade(label="Tools", menu=tools_menu)
+
+        # tools menu
+        tools_menu = tk.Menu(self, tearoff=False)
+        tools_menu.add_command(
+            label="Update weather Data", command=self.callbacks["update_weather_data"]
+        )
         self.add_cascade(label="Tools", menu=tools_menu)
 
         # go to record list

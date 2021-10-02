@@ -5,6 +5,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter.font import nametofont
 
 from . import models as m
+from . import network as n
 from . import views as v
 from .images import ABQ_LOGO_32, ABQ_LOGO_64
 from .mainmenu import get_main_menu_for_os
@@ -43,6 +44,7 @@ class Application(tk.Tk):
             "on_save": self.on_save,
             "get_seed_sample": self.get_current_seed_sample,
             "get_check_tech": self.get_tech_for_lab_check,
+            "update_weather_data": self.update_weather_data,
         }
 
         # set global theme
@@ -240,3 +242,24 @@ class Application(tk.Tk):
             tech = check["lab_tech"] if check else ""
             self.record_form.inputs["Technician"].set(tech)
             self.record_form.focus_next_empty()
+
+    #####################
+    # Weather functions #
+    #####################
+
+    def update_weather_data(self):
+        """Download weather data and store it in our data model."""
+        try:
+            weather_data = n.get_local_weather(self.settings["weather_station"].get())
+        except Exception as e:
+            messagebox.showerror(
+                title="Error",
+                message="Problem retrieving weather data",
+                detail=str(e),
+            )
+            self.status.set("Problem retrieving weather data")
+        else:
+            self.data_model.add_weather_data(weather_data)
+            self.status.set(
+                f"Weather data recorded for {weather_data['observation_time_rfc822']}"
+            )

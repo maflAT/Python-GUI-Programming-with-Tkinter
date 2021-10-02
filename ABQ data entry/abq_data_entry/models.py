@@ -133,6 +133,7 @@ class SettingsModel:
         "theme": {"type": "str", "value": "default"},
         "db_host": {"type": "str", "value": "localhost"},
         "db_name": {"type": "str", "value": "abq"},
+        "weather_station": {"type": "str", "value": "KBMG"},
     }
 
     def load(self):
@@ -244,7 +245,11 @@ class SQLModel:
         self.fields["Lab"]["values"] = [x["id"] for x in labs]
         self.fields["Plot"]["values"] = [str(x["plot"]) for x in plots]
 
-    def query(self, query, parameters=None):
+    def query(self, query: str, parameters: dict[str, str] = None):
+        """Execute parametrized database query.
+
+        `query`: query string with placeholders for parameters.
+        `parameters`: dictionary containing parameters to fill into query."""
         cursor = self.connection.cursor()
         try:
             cursor.execute(query, parameters)
@@ -341,3 +346,20 @@ class SQLModel:
             {"lab": lab, "plot": plot},
         )
         return result[0]["current_seed_sample"] if result else ""
+
+    #####################
+    # Weather functions #
+    #####################
+
+    def add_weather_data(self, data: dict[str, str]):
+        query = (
+            "INSERT INTO local_weather VALUES "
+            "(%(observation_time_rfc822)s, %(temp_c)s, "
+            "%(relative_humidity)s, %(pressure_mb)s, "
+            "%(weather)s)"
+        )
+        try:
+            self.query(query, data)
+        except pg.IntegrityError:
+            # already have weather for this timestamp
+            pass
