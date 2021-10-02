@@ -5,6 +5,7 @@ from tkinter import filedialog, messagebox, ttk
 from tkinter.font import nametofont
 from tempfile import mkdtemp
 from datetime import date
+from queue import Queue
 
 from . import models as m
 from . import network as n
@@ -299,29 +300,20 @@ class Application(tk.Tk):
             )
             return
         d = v.LoginDialog(self, "Login to ABQ Corporate REST API")
-        if d.result is not None:
-            username, password = d.result
-        else:
+        if not d.result:
             return
-        try:
-            n.upload_to_corporate_rest(
-                filepath=csvfile,
-                upload_url=self.settings["abq_upload_url"].get(),
-                auth_url=self.settings["abq_auth_url"].get(),
-                username=username,
-                password=password,
-            )
-        except n.requests.RequestException as e:
-            messagebox.showerror("Error with your request", str(e))
-        except n.requests.ConnectionError as e:
-            messagebox.showerror("Error connecting", str(e))
-        except Exception as e:
-            messagebox.showerror("General Exception", str(e))
-        else:
-            messagebox.showinfo(
-                title="Success",
-                message=f"'{csvfile}' successfully uploaded to REST API",
-            )
+        username, password = d.result
+        self.rest_queue = Queue()
+        self.uploader = n.CorporateRestUploaderWithQueue(
+            filepath=csvfile,
+            upload_url=self.settings["abq_upload_url"].get(),
+            auth_url=self.settings["abq_auth_url"].get(),
+            username=username,
+            password=password,
+            queue=self.rest_queue,
+        )
+        self.uploader.start()
+        self.check_queue(self.rest_queue)
 
     def upload_to_corporate_ftp(self):
         """Upload CSV records to corporate ftp server."""
@@ -344,3 +336,26 @@ class Application(tk.Tk):
                     title="Success",
                     message=f"'{csvfile}' successfully uploaded to FTP server.",
                 )
+
+    def check_queue(self, queue: Queue):
+        if not queue.empty():
+            item: n.Message = queue.get()
+            if item.status == "done":
+                messagebox.showinfo(
+                    title=item.status,
+                    message=item.subject,
+                    detail=item.body,
+                )
+                self.status.set(item.subject)
+                return
+            elif item.status == "error":
+                messagebox.showerror(
+                    title=item.status,
+                    message=item.subject,
+                    detail=item.body,
+                )
+                self.status.set(item.subject)
+                return
+            else:
+                self.status.set(item.body)
+        self.after(100, self.check_queue, queue)
