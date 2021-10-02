@@ -1,10 +1,14 @@
 {
     "cSpell.words": [
         "Agrilabs",
+        "deiconify",
         "KBMG",
+        "mkdtemp",
         "nametofont",
         "NSEW",
-        "tkraise"
+        "tkraise",
+        "yscrollcommand",
+        "yview"
     ],
     "explorerExclude.backup": null,
     "files.exclude": {

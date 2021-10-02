@@ -119,6 +119,17 @@ class WindowsMainMenu(GenericMainMenu):
 
         # tools menu
         tools_menu = tk.Menu(self, tearoff=False)
+        tools_menu.add_command(
+            label="Update weather Data", command=self.callbacks["update_weather_data"]
+        )
+        tools_menu.add_command(
+            label="Upload CSV to corporate REST",
+            command=self.callbacks["upload_to_corporate_rest"],
+        )
+        tools_menu.add_command(
+            label="Upload CSV to corporate FTP",
+            command=self.callbacks["upload_to_corporate_ftp"],
+        )
         tools_menu.add_separator()
         #   options sub menu
         options_menu = tk.Menu(tools_menu, tearoff=False)
@@ -146,17 +157,6 @@ class WindowsMainMenu(GenericMainMenu):
         self.settings["theme"].trace("w", self.on_theme_change)
         options_menu.add_cascade(label="Theme", menu=themes_menu)
         tools_menu.add_cascade(label="Options", menu=options_menu)
-        self.add_cascade(label="Tools", menu=tools_menu)
-
-        # tools menu
-        tools_menu = tk.Menu(self, tearoff=False)
-        tools_menu.add_command(
-            label="Update weather Data", command=self.callbacks["update_weather_data"]
-        )
-        tools_menu.add_command(
-            label="Upload CSV to corporate REST",
-            command=self.callbacks["upload_to_corporate_rest"],
-        )
         self.add_cascade(label="Tools", menu=tools_menu)
 
         # go to record list

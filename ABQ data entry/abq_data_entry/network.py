@@ -1,4 +1,6 @@
+import os
 import requests
+import ftplib as ftp
 from urllib.request import urlopen
 from xml.etree import ElementTree
 
@@ -36,3 +38,14 @@ def upload_to_corporate_rest(
     response = session.put(upload_url, files=files)
     files["file"].close()
     response.raise_for_status()
+
+
+def upload_to_corporate_ftp(
+    filepath: str, ftp_host: str, ftp_port: int, ftp_user: str, ftp_pass: str
+):
+    with ftp.FTP() as ftp_cx:
+        ftp_cx.connect(host=ftp_host, port=ftp_port)
+        ftp_cx.login(user=ftp_user, passwd=ftp_pass)
+        filename = os.path.basename(filepath)
+        with open(filepath, "rb") as fh:
+            ftp_cx.storbinary(f"STOR {filename}", fh)

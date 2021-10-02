@@ -25,13 +25,21 @@ class Application(tk.Tk):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        # hide main window while initialization isn't completed
+        self.withdraw()
+
         # init settings
         config_dir = self.config_dirs.get(platform.system(), "~")
         self.settings_model = m.SettingsModel(path=config_dir)
         self.load_settings()
-
         default_filename = f"abq_data_record_{date.today().isoformat()}.csv"
         self.filename = tk.StringVar(value=default_filename)
+
+        # main window styling
+        self.resizable(width=False, height=False)
+        self.title("ABQ Data Entry Application")
+        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
+        self.call("wm", "iconphoto", self._w, self.taskbar_icon)
 
         # init data model
         self.database_login()
@@ -51,6 +59,7 @@ class Application(tk.Tk):
             "get_check_tech": self.get_tech_for_lab_check,
             "update_weather_data": self.update_weather_data,
             "upload_to_corporate_rest": self.upload_to_corporate_rest,
+            "upload_to_corporate_ftp": self.upload_to_corporate_ftp,
         }
 
         # set global theme
@@ -62,12 +71,6 @@ class Application(tk.Tk):
         # set global fonts
         self.set_font()
         self.settings["font size"].trace("w", self.set_font)
-
-        # main window styling
-        self.resizable(width=False, height=False)
-        self.title("ABQ Data Entry Application")
-        self.taskbar_icon = tk.PhotoImage(file=ABQ_LOGO_64)
-        self.call("wm", "iconphoto", self._w, self.taskbar_icon)
 
         # top level widgets
         #   main menu
@@ -102,6 +105,9 @@ class Application(tk.Tk):
         self.status_bar = ttk.Label(self, textvariable=self.status)
         self.status_bar.grid(sticky=tk.EW, row=2, padx=10)
         self.records_saved = 0
+
+        # show main window
+        self.deiconify()
 
     def load_settings(self):
         """Load settings into our self.settings dict"""
@@ -316,3 +322,25 @@ class Application(tk.Tk):
                 title="Success",
                 message=f"'{csvfile}' successfully uploaded to REST API",
             )
+
+    def upload_to_corporate_ftp(self):
+        """Upload CSV records to corporate ftp server."""
+        csvfile = self._create_csv_extract()
+        d = v.LoginDialog(parent=self, title="Login to ABQ Corporate FTP server")
+        if d.result is not None:
+            username, password = d.result
+            try:
+                n.upload_to_corporate_ftp(
+                    filepath=csvfile,
+                    ftp_host=self.settings["abq_ftp_host"].get(),
+                    ftp_port=self.settings["abq_ftp_port"].get(),
+                    ftp_user=username,
+                    ftp_pass=password,
+                )
+            except n.ftp.all_errors as e:
+                messagebox.showerror(title="Error connecting to ftp", message=str(e))
+            else:
+                messagebox.showinfo(
+                    title="Success",
+                    message=f"'{csvfile}' successfully uploaded to FTP server.",
+                )

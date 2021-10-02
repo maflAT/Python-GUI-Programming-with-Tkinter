@@ -141,6 +141,8 @@ class SettingsModel:
         "weather_station": {"type": "str", "value": "KBMG"},
         "abq_auth_url": {"type": "str", "value": "http://localhost:8000/auth"},
         "abq_upload_url": {"type": "str", "value": "http://localhost:8000/upload"},
+        "abq_ftp_host": {"type": "str", "value": "localhost"},
+        "abq_ftp_port": {"type": "int", "value": 2100},
     }
 
     def load(self):
