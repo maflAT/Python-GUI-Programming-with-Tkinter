@@ -3,6 +3,8 @@ import platform
 import tkinter as tk
 from tkinter import filedialog, messagebox, ttk
 from tkinter.font import nametofont
+from tempfile import mkdtemp
+from datetime import date
 
 from . import models as m
 from . import network as n
@@ -28,6 +30,9 @@ class Application(tk.Tk):
         self.settings_model = m.SettingsModel(path=config_dir)
         self.load_settings()
 
+        default_filename = f"abq_data_record_{date.today().isoformat()}.csv"
+        self.filename = tk.StringVar(value=default_filename)
+
         # init data model
         self.database_login()
         if not hasattr(self, "data_model"):
@@ -45,6 +50,7 @@ class Application(tk.Tk):
             "get_seed_sample": self.get_current_seed_sample,
             "get_check_tech": self.get_tech_for_lab_check,
             "update_weather_data": self.update_weather_data,
+            "upload_to_corporate_rest": self.upload_to_corporate_rest,
         }
 
         # set global theme
@@ -262,4 +268,51 @@ class Application(tk.Tk):
             self.data_model.add_weather_data(weather_data)
             self.status.set(
                 f"Weather data recorded for {weather_data['observation_time_rfc822']}"
+            )
+
+    ##########################
+    # Data upload functions: #
+    ##########################
+
+    def _create_csv_extract(self):
+        tmpfilepath = mkdtemp()
+        csvmodel = m.CSVModel(filename=self.filename.get(), filepath=tmpfilepath)
+        records = self.data_model.get_all_records()
+        if not records:
+            return None
+        for record in records:
+            csvmodel.save_record(record)
+        return csvmodel.filename
+
+    def upload_to_corporate_rest(self):
+        csvfile = self._create_csv_extract()
+        if csvfile is None:
+            messagebox.showwarning(
+                title="No records",
+                message="There are noe records to upload",
+            )
+            return
+        d = v.LoginDialog(self, "Login to ABQ Corporate REST API")
+        if d.result is not None:
+            username, password = d.result
+        else:
+            return
+        try:
+            n.upload_to_corporate_rest(
+                filepath=csvfile,
+                upload_url=self.settings["abq_upload_url"].get(),
+                auth_url=self.settings["abq_auth_url"].get(),
+                username=username,
+                password=password,
+            )
+        except n.requests.RequestException as e:
+            messagebox.showerror("Error with your request", str(e))
+        except n.requests.ConnectionError as e:
+            messagebox.showerror("Error connecting", str(e))
+        except Exception as e:
+            messagebox.showerror("General Exception", str(e))
+        else:
+            messagebox.showinfo(
+                title="Success",
+                message=f"'{csvfile}' successfully uploaded to REST API",
             )

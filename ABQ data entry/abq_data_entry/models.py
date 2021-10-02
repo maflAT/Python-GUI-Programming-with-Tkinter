@@ -73,8 +73,13 @@ class CSVModel:
         "Notes": {"req": False, "type": FT.long_string},
     }
 
-    def __init__(self, filename: str) -> None:
-        self.filename = filename
+    def __init__(self, filename: str, filepath: str = None) -> None:
+        if filepath:
+            if not os.path.exists(filepath):
+                os.mkdir(filepath)
+            self.filename = os.path.join(filepath, filename)
+        else:
+            self.filename = filename
 
     def save_record(self, data: dict, row_number: int = None):
         """Save a dict of data to the CSV file"""
@@ -134,6 +139,8 @@ class SettingsModel:
         "db_host": {"type": "str", "value": "localhost"},
         "db_name": {"type": "str", "value": "abq"},
         "weather_station": {"type": "str", "value": "KBMG"},
+        "abq_auth_url": {"type": "str", "value": "http://localhost:8000/auth"},
+        "abq_upload_url": {"type": "str", "value": "http://localhost:8000/upload"},
     }
 
     def load(self):

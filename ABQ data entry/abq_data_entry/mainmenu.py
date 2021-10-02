@@ -153,6 +153,10 @@ class WindowsMainMenu(GenericMainMenu):
         tools_menu.add_command(
             label="Update weather Data", command=self.callbacks["update_weather_data"]
         )
+        tools_menu.add_command(
+            label="Upload CSV to corporate REST",
+            command=self.callbacks["upload_to_corporate_rest"],
+        )
         self.add_cascade(label="Tools", menu=tools_menu)
 
         # go to record list

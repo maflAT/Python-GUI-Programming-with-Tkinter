@@ -83,7 +83,7 @@ CREATE VIEW data_record_view AS (
         pc.seed_sample AS "Seed sample",
         pc.humidity AS "Humidity",
         pc.light AS "Light",
-        pc.temperature AS "Temperaturue",
+        pc.temperature AS "Temperature",
         pc.plants AS "Plants",
         pc.blossoms AS "Blossoms",
         pc.fruit AS "Fruit",
