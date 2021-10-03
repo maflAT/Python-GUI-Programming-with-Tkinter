@@ -384,3 +384,13 @@ class SQLModel:
             "GROUP BY date, lab_id ORDER BY day, lab_id;"
         )
         return self.query(query)
+
+    def get_yield_by_plot(self):
+        query = (
+            "SELECT lab_id, plot, seed_sample, MAX(fruit) AS yield, "
+            "AVG(humidity) AS avg_humidity, "
+            "AVG(temperature) AS avg_temperature "
+            "FROM plot_checks WHERE NOT equipment_fault "
+            "GROUP BY lab_id, plot, seed_sample"
+        )
+        return self.query(query)

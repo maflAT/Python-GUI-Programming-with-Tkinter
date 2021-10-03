@@ -134,6 +134,10 @@ class WindowsMainMenu(GenericMainMenu):
             label="Show growth chart",
             command=self.callbacks["show_growth_chart"],
         )
+        tools_menu.add_command(
+            label="Show yield chart",
+            command=self.callbacks["show_yield_chart"],
+        )
         tools_menu.add_separator()
         #   options sub menu
         options_menu = tk.Menu(tools_menu, tearoff=False)

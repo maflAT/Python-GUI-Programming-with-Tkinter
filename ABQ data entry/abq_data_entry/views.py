@@ -1,3 +1,8 @@
+import matplotlib
+
+matplotlib.use("TkAgg")
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg, NavigationToolbar2Tk
 import tkinter as tk
 from tkinter import ttk
 from tkinter.simpledialog import Dialog
@@ -418,3 +423,28 @@ class LineChartView(tk.Canvas):
         for label, color in mapping.items():
             self.create_text((x, y), text=label, fill=color, anchor="w")
             y += 20
+
+
+class YieldChartView(tk.Frame):
+    def __init__(self, parent: tk.Widget, x_axis: str, y_axis: str, title: str) -> None:
+        super().__init__(parent)
+        self.figure = Figure(figsize=(6, 4), dpi=100)
+        self.canvas = FigureCanvasTkAgg(self.figure, master=self)
+        self.toolbar = NavigationToolbar2Tk(self.canvas, self)
+        self.canvas.get_tk_widget().pack(fill="both", expand=True)
+
+        self.axes = self.figure.add_subplot(1, 1, 1)
+        self.axes.set_xlabel(x_axis)
+        self.axes.set_ylabel(y_axis)
+        self.axes.set_title(title)
+
+        self.scatters = []
+        self.scatter_labels = []
+
+    def draw_scatter(self, data: list[tuple], color: str, label: str):
+        x, y, s = zip(*data)
+        s = [(x ** 2) // 2 for x in s]
+        scatter = self.axes.scatter(x, y, s, c=color, label=label, alpha=0.5)
+        self.scatters.append(scatter)
+        self.scatter_labels.append(label)
+        self.axes.legend(self.scatters, self.scatter_labels)

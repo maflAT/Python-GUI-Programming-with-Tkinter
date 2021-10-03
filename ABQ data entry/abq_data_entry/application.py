@@ -62,6 +62,7 @@ class Application(tk.Tk):
             "upload_to_corporate_rest": self.upload_to_corporate_rest,
             "upload_to_corporate_ftp": self.upload_to_corporate_ftp,
             "show_growth_chart": self.show_growth_chart,
+            "show_yield_chart": self.show_yield_chart,
         }
 
         # set global theme
@@ -393,3 +394,28 @@ class Application(tk.Tk):
         for lab, color in legend.items():
             dataxy = [(x["day"], x["avg_height"]) for x in data if x["lab_id"] == lab]
             chart.plot_line(data=dataxy, color=color)
+
+    def show_yield_chart(self):
+        popup = tk.Toplevel()
+        chart = v.YieldChartView(
+            parent=popup,
+            x_axis="Average plot humidity",
+            y_axis="Average Plot temperature",
+            title="Yield as a product of humidity and temperature",
+        )
+        chart.pack(fill="both", expand=True)
+
+        data = self.data_model.get_yield_by_plot()
+        seed_colors = {
+            "AXM477": "red",
+            "AXM478": "yellow",
+            "AXM479": "green",
+            "AXM480": "blue",
+        }
+        for seed, color in seed_colors.items():
+            seed_data = [
+                (x["avg_humidity"], x["avg_temperature"], x["yield"])
+                for x in data
+                if x["seed_sample"] == seed
+            ]
+            chart.draw_scatter(seed_data, color, seed)
