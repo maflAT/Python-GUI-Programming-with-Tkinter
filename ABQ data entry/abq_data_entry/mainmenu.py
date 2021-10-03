@@ -130,6 +130,10 @@ class WindowsMainMenu(GenericMainMenu):
             label="Upload CSV to corporate FTP",
             command=self.callbacks["upload_to_corporate_ftp"],
         )
+        tools_menu.add_command(
+            label="Show growth chart",
+            command=self.callbacks["show_growth_chart"],
+        )
         tools_menu.add_separator()
         #   options sub menu
         options_menu = tk.Menu(tools_menu, tearoff=False)

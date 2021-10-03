@@ -16,7 +16,11 @@ class Message(NamedTuple):
     body: str
 
 
-# Weather functions:
+#####################
+# Weather functions #
+#####################
+
+
 def get_local_weather(station: str) -> dict[str, str]:
     """Retrieve weather data for `station` from weather.gov."""
 
@@ -37,7 +41,11 @@ def get_local_weather(station: str) -> dict[str, str]:
     return weatherdata
 
 
-# Data upload functions:
+#########################
+# Data upload functions #
+#########################
+
+
 def upload_to_corporate_rest(
     filepath: str, upload_url: str, auth_url: str, username: str, password: str
 ):

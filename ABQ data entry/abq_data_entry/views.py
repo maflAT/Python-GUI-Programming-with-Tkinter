@@ -368,3 +368,53 @@ class LoginDialog(Dialog):
 
     def apply(self):
         self.result = (self.user.get(), self.pw.get())
+
+
+class LineChartView(tk.Canvas):
+    margin: int = 20
+
+    def __init__(
+        self, parent, chart_width, chart_height, x_axis, y_axis, max_x, max_y
+    ) -> None:
+        self.max_x = max_x
+        self.max_y = max_y
+        self.chart_width = chart_width
+        self.chart_height = chart_height
+        view_width = chart_width + 2 * self.margin
+        view_height = chart_height + 2 * self.margin
+        super().__init__(parent, width=view_width, height=view_height, bg="lightgrey")
+        self.origin = (self.margin, view_height - self.margin)
+
+        # draw axes
+        self.create_line(self.origin, (self.margin, self.margin), width=2)
+        self.create_line(
+            self.origin, (view_width - self.margin, view_height - self.margin)
+        )
+        self.create_text(
+            (view_width // 2, view_height - self.margin), text=x_axis, anchor="n"
+        )
+        self.create_text(
+            (self.margin, view_height // 2), text=y_axis, angle=90, anchor="s"
+        )
+
+        # create chart
+        self.chart = tk.Canvas(
+            self, width=chart_width, height=chart_height, background="white"
+        )
+        self.create_window(self.origin, window=self.chart, anchor="sw")
+
+    def plot_line(self, data: dict, color: str):
+        x_scale = self.chart_width / self.max_x
+        y_scale = self.chart_height / self.max_y
+        coords = [
+            (round(x * x_scale), self.chart_height - round(y * y_scale))
+            for x, y in data
+        ]
+        self.chart.create_line(*coords, width=2, fill=color)
+
+    def draw_legend(self, mapping: dict[str, str]):
+        y = self.margin
+        x = round(self.margin * 1.5) + self.chart_width
+        for label, color in mapping.items():
+            self.create_text((x, y), text=label, fill=color, anchor="w")
+            y += 20

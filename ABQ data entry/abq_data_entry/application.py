@@ -61,6 +61,7 @@ class Application(tk.Tk):
             "update_weather_data": self.update_weather_data,
             "upload_to_corporate_rest": self.upload_to_corporate_rest,
             "upload_to_corporate_ftp": self.upload_to_corporate_ftp,
+            "show_growth_chart": self.show_growth_chart,
         }
 
         # set global theme
@@ -359,3 +360,36 @@ class Application(tk.Tk):
             else:
                 self.status.set(item.body)
         self.after(100, self.check_queue, queue)
+
+    ###########################
+    # Visualization functions #
+    ###########################
+
+    def show_growth_chart(self):
+        data = self.data_model.get_growth_by_lab()
+        max_x = max(x["day"] for x in data)
+        max_y = max(x["avg_height"] for x in data)
+
+        popup = tk.Toplevel()
+        chart = v.LineChartView(
+            popup,
+            chart_width=600,
+            chart_height=300,
+            x_axis="day",
+            y_axis="cm",
+            max_x=max_x,
+            max_y=max_y,
+        )
+        chart.pack(fill="both", expand=1)
+
+        legend = {
+            "A": "green",
+            "B": "blue",
+            "C": "cyan",
+            "D": "yellow",
+            "E": "purple",
+        }
+        chart.draw_legend(legend)
+        for lab, color in legend.items():
+            dataxy = [(x["day"], x["avg_height"]) for x in data if x["lab_id"] == lab]
+            chart.plot_line(data=dataxy, color=color)

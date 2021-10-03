@@ -372,3 +372,15 @@ class SQLModel:
         except pg.IntegrityError:
             # already have weather for this timestamp
             pass
+
+    ###########################
+    # Visualization functions #
+    ###########################
+
+    def get_growth_by_lab(self):
+        query = (
+            "SELECT date - (SELECT min(date) FROM plot_checks) AS day, "
+            "lab_id, avg(median_height) AS avg_height FROM plot_checks "
+            "GROUP BY date, lab_id ORDER BY day, lab_id;"
+        )
+        return self.query(query)
