@@ -20,6 +20,7 @@
         "**/.hg": true,
         "**/.svn": true,
         "**/.vscode": false,
+        "**/*.egg-info": true,
         "**/*.pdf": false,
         "**/CVS": true,
         "**/desktop.ini": true,

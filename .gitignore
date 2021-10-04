@@ -50,3 +50,6 @@ Temporary Items
 
 *.csv
 **/__pycache__
+*/build/
+*/dist/
+**/*.egg-info
